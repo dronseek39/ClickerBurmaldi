@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title> Кликер</title>
+<style>
+:root {
+    color-scheme: dark;
+    --bg: #16110f;
+    --panel: rgba(30, 26, 24, 0.9);
+    --panel-strong: rgba(47, 41, 37, 0.96);
+    --line: rgba(255, 255, 255, 0.12);
+    --text: #fff8ef;
+    --muted: #c7b6a1;
+    --gold: #f4c95d;
+    --teal: #41d7b6;
+    --coral: #ff6f61;
+    --violet: #8d7bff;
+    --green: #6de38f;
+    --danger: #ff5f75;
+    --shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    overflow-x: hidden;
+    background:
+        linear-gradient(135deg, rgba(65, 215, 182, 0.18), transparent 34%),
+        linear-gradient(235deg, rgba(255, 111, 97, 0.18), transparent 34%),
+        radial-gradient(circle at 50% -10%, rgba(244, 201, 93, 0.22), transparent 38%),
+        var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: linear-gradient(to bottom, black 0%, transparent 78%);
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    border: 0;
+}
+
+.app {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 390px;
+    gap: 22px;
+    width: min(1180px, calc(100% - 32px));
+    min-height: 100vh;
+    margin: 0 auto;
+    padding: 24px 0;
+}
+
+.game {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: calc(100vh - 48px);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(21, 17, 15, 0.72);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.topbar,
+.footerbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.footerbar {
+    border-top: 1px solid var(--line);
+    border-bottom: 0;
+    flex-wrap: wrap;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.brand-mark {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--gold), var(--coral));
+    color: #221712;
+    font-weight: 900;
+}
+
+h1,
+h2,
+h3,
+p {
+    margin: 0;
+}
+
+h1 {
+    font-size: clamp(24px, 4vw, 42px);
+    line-height: 1;
+    letter-spacing: 0;
+}
+
+.subtitle {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.icon-btn,
+.text-btn {
+    min-height: 38px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    border: 1px solid var(--line);
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.icon-btn {
+    width: 42px;
+    padding: 0;
+    font-size: 20px;
+}
+
+.text-btn {
+    padding: 0 12px;
+    font-weight: 700;
+}
+
+.icon-btn:hover,
+.text-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.13);
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+.icon-btn.active {
+    background: rgba(65, 215, 182, 0.16);
+    border-color: rgba(65, 215, 182, 0.55);
+}
+
+.stage {
+    position: relative;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 20px;
+    padding: 28px;
+    overflow: hidden;
+}
+
+.score-label {
+    color: var(--muted);
+    font-size: 13px;
+    text-transform: uppercase;
+    font-weight: 800;
+}
+
+.score {
+    font-size: clamp(58px, 12vw, 138px);
+    font-weight: 900;
+    line-height: 0.9;
+    text-align: center;
+    text-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    transition: transform 0.14s ease;
+}
+
+.score.pop {
+    transform: scale(1.04);
+}
+
+.click-zone {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: min(430px, 86vw);
+    aspect-ratio: 1;
+}
+
+.click-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background:
+        conic-gradient(from 120deg, rgba(65, 215, 182, 0.36), rgba(244, 201, 93, 0.32), rgba(255, 111, 97, 0.34), rgba(65, 215, 182, 0.36));
+    filter: blur(0.2px);
+    animation: spin 16s linear infinite;
+    opacity: 0.72;
+}
+
+.click-ring::after {
+    content: "";
+    position: absolute;
+    inset: 18px;
+    border-radius: inherit;
+    background: rgba(20, 16, 14, 0.88);
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.click-btn {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 66%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.16);
+    background:
+        radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.34), transparent 24%),
+        linear-gradient(145deg, #ff8a5f, #f4c95d 48%, #41d7b6);
+    color: #1d1310;
+    font-size: clamp(24px, 5vw, 44px);
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow:
+        0 22px 44px rgba(0, 0, 0, 0.34),
+        inset 0 -18px 32px rgba(0, 0, 0, 0.18);
+    transition: transform 0.12s ease, filter 0.2s ease, box-shadow 0.2s ease;
+    user-select: none;
+}
+
+.click-btn:hover {
+    transform: translateY(-3px) scale(1.02);
+    filter: saturate(1.08);
+}
+
+.click-btn:active {
+    transform: translateY(2px) scale(0.96);
+}
+
+.click-btn.skin-neon {
+    background:
+        radial-gradient(circle at 36% 24%, rgba(255, 255, 255, 0.42), transparent 22%),
+        linear-gradient(145deg, #41d7b6, #8d7bff 52%, #ff6f61);
+    color: white;
+    box-shadow:
+        0 0 34px rgba(65, 215, 182, 0.4),
+        0 22px 44px rgba(0, 0, 0, 0.34),
+        inset 0 -18px 32px rgba(0, 0, 0, 0.24);
+}
+
+.click-btn.skin-gold {
+    background:
+        radial-gradient(circle at 36% 24%, rgba(255, 255, 255, 0.42), transparent 22%),
+        linear-gradient(145deg, #fff1a6, #f4c95d 52%, #ff8a5f);
+    color: #25150f;
+}
+
+.click-btn.skin-glass {
+    background:
+        radial-gradient(circle at 35% 26%, rgba(255, 255, 255, 0.5), transparent 23%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.32), rgba(65, 215, 182, 0.24)),
+        rgba(255, 255, 255, 0.1);
+    color: white;
+    backdrop-filter: blur(8px);
+}
+
+.combo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--muted);
+    font-weight: 800;
+}
+
+.combo strong {
+    color: var(--gold);
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
+    gap: 10px;
+    width: 100%;
+}
+
+.stat {
+    min-height: 76px;
+    padding: 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--line);
+}
+
+.stat span {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.stat strong {
+    display: block;
+    margin-top: 7px;
+    font-size: 22px;
+}
+
+.shop {
+    position: sticky;
+    top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: calc(100vh - 48px);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.shop-head {
+    padding: 18px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.shop-head h2 {
+    font-size: 24px;
+}
+
+.tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    padding: 0 14px;
+}
+
+.tab {
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.tab.active {
+    background: rgba(244, 201, 93, 0.16);
+    border-color: rgba(244, 201, 93, 0.48);
+    color: var(--text);
+}
+
+.shop-list {
+    display: grid;
+    gap: 10px;
+    padding: 0 14px 14px;
+    overflow-y: auto;
+}
+
+.upgrade {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.055);
+}
+
+.upgrade-icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.09);
+    font-size: 23px;
+}
+
+.upgrade h3 {
+    font-size: 16px;
+}
+
+.upgrade p {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.upgrade-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.buy-btn {
+    width: 100%;
+    min-height: 40px;
+    margin-top: 10px;
+    border-radius: 8px;
+    color: #1b1210;
+    background: linear-gradient(135deg, var(--gold), #ff9a6a);
+    cursor: pointer;
+    font-weight: 900;
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.buy-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    filter: brightness(1.04);
+}
+
+.buy-btn:disabled {
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.46);
+}
+
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    z-index: 10;
+    max-width: min(420px, calc(100% - 24px));
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel-strong);
+    color: var(--text);
+    box-shadow: var(--shadow);
+    transform: translate(-50%, 18px);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.toast.show {
+    transform: translate(-50%, 0);
+    opacity: 1;
+}
+
+.float {
+    position: fixed;
+    z-index: 7;
+    pointer-events: none;
+    color: var(--gold);
+    font-weight: 900;
+    text-shadow: 0 3px 12px rgba(0, 0, 0, 0.55);
+    animation: floatUp 0.9s ease forwards;
+}
+
+.float.crit {
+    color: var(--coral);
+}
+
+@keyframes floatUp {
+    to {
+        transform: translateY(-64px) scale(1.08);
+        opacity: 0;
+    }
+}
+
+.video-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: none;
+    place-items: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.88);
+}
+
+.video-overlay.open {
+    display: grid;
+}
+
+.video-box {
+    width: min(980px, 100%);
+}
+
+.video-box video {
+    width: 100%;
+    max-height: 74vh;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: black;
+}
+
+.video-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.compact-shop-toggle {
+    display: none;
+}
+
+@media (max-width: 980px) {
+    .app {
+        grid-template-columns: 1fr;
+    }
+
+    .game {
+        min-height: auto;
+    }
+
+    .shop {
+        position: static;
+        max-height: none;
+    }
+
+    .compact-shop-toggle {
+        display: inline-grid;
+    }
+}
+
+@media (max-width: 680px) {
+    .app {
+        width: min(100% - 18px, 1180px);
+        padding: 9px 0;
+        gap: 10px;
+    }
+
+    .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .toolbar {
+        justify-content: flex-start;
+    }
+
+    .stage {
+        padding: 20px 12px;
+    }
+
+    .stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .stat strong {
+        font-size: 18px;
+    }
+
+    .tabs {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+</style>
+</head>
+<body>
+<main class="app">
+    <section class="game" aria-label="Игровое поле">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-mark">M</div>
+                <div>
+                    <h1>Кликер</h1>
+                    <p class="subtitle">Сезон 01 · ночной режим</p>
+                </div>
+            </div>
+            <div class="toolbar">
+                <button class="icon-btn active" id="soundBtn" type="button" title="Звук">🔊</button>
+                <button class="icon-btn" id="musicBtn" type="button" title="Музыка">♪</button>
+                <button class="icon-btn compact-shop-toggle" id="mobileShopBtn" type="button" title="Магазин">🛒</button>
+                <button class="text-btn" id="saveBtn" type="button">Сохранить</button>
+                <button class="text-btn" id="resetBtn" type="button">Сброс</button>
+            </div>
+        </header>
+
+        <section class="stage">
+            <div>
+                <div class="score-label">Баланс</div>
+                <div class="score" id="score">0</div>
+            </div>
+
+            <div class="click-zone" id="clickZone">
+                <div class="click-ring"></div>
+                <button class="click-btn" id="clickBtn" type="button">КЛИК</button>
+            </div>
+
+            <div class="combo" id="combo">Комбо: <strong>x1.00</strong></div>
+        </section>
+
+        <footer class="footerbar">
+            <div class="stats">
+                <div class="stat"><span>За клик</span><strong id="clickPower">1</strong></div>
+                <div class="stat"><span>В секунду</span><strong id="perSecond">0</strong></div>
+                <div class="stat"><span>Крит</span><strong id="critChance">0%</strong></div>
+                <div class="stat"><span>Всего кликов</span><strong id="totalClicks">0</strong></div>
+            </div>
+        </footer>
+    </section>
+
+    <aside class="shop" id="shop" aria-label="Магазин улучшений">
+        <div class="shop-head">
+            <h2>Магазин</h2>
+            <p class="subtitle">Апгрейды · авто · бонусы · стиль</p>
+        </div>
+        <nav class="tabs" aria-label="Категории магазина">
+            <button class="tab active" data-tab="click" type="button">Клик</button>
+            <button class="tab" data-tab="auto" type="button">Авто</button>
+            <button class="tab" data-tab="bonus" type="button">Бонус</button>
+            <button class="tab" data-tab="style" type="button">Стиль</button>
+        </nav>
+        <div class="shop-list" id="shopList"></div>
+    </aside>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<div class="video-overlay" id="videoOverlay" aria-hidden="true">
+    <div class="video-box">
+        <video id="partyVideo" src="C:\Users\lesab\Downloads\ssstik.io_@low_light67_1779295424614.mp4" controls playsinline></video>
+        <div class="video-actions">
+            <button class="text-btn" id="closeVideoBtn" type="button">Закрыть</button>
+        </div>
+    </div>
+</div>
+
+<audio id="clickSound" src="file:///C:/Users/lesab/Downloads/button-click-short-ringing-close-dry.mp3" preload="auto"></audio>
+<audio id="buySound" src="file:///C:/Users/lesab/Downloads/button-click-short-ringing-close-dry.mp3" preload="auto"></audio>
+<audio id="bgMusic" src="file:///C:\Users\lesab\Downloads\ssstik.io_1779295833252.mp3" preload="auto" loop></audio>
+
+<script>
+const STORAGE_KEY = "mem-clicker-v2";
+const TICK_MS = 250;
+const formatter = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 });
+
+const upgrades = [
+    {
+        id: "finger",
+        tab: "click",
+        icon: "☝",
+        name: "Сильный палец",
+        desc: "+1 к базовой силе клика за уровень.",
+        baseCost: 25,
+        scale: 1.42,
+        max: 50,
+        buy(state) {
+            state.baseClick += 1;
+        }
+    },
+    {
+        id: "energy",
+        tab: "click",
+        icon: "⚡",
+        name: "Энергетик",
+        desc: "+5 к базовой силе клика за уровень.",
+        baseCost: 140,
+        scale: 1.55,
+        max: 25,
+        buy(state) {
+            state.baseClick += 5;
+        }
+    },
+    {
+        id: "algorithm",
+        tab: "click",
+        icon: "#",
+        name: "Алгоритм бурмалды",
+        desc: "+15% ко всем кликам.",
+        baseCost: 520,
+        scale: 1.85,
+        max: 12,
+        buy(state) {
+            state.clickMultiplier += 0.15;
+        }
+    },
+    {
+        id: "cursor",
+        tab: "auto",
+        icon: "⌁",
+        name: "Автодеп",
+        desc: "+1 очко в секунду.",
+        baseCost: 80,
+        scale: 1.45,
+        max: 60,
+        buy(state) {
+            state.autoRate += 1;
+        }
+    },
+    {
+        id: "factory",
+        tab: "auto",
+        icon: "▣",
+        name: "Мелл-фабрика",
+        desc: "+8 очков в секунду.",
+        baseCost: 420,
+        scale: 1.62,
+        max: 30,
+        buy(state) {
+            state.autoRate += 8;
+        }
+    },
+    {
+        id: "stream",
+        tab: "auto",
+        icon: "▶",
+        name: "Стрим бурмалды",
+        desc: "+35 очков в секунду.",
+        baseCost: 1800,
+        scale: 1.78,
+        max: 18,
+        buy(state) {
+            state.autoRate += 35;
+        }
+    },
+    {
+        id: "lucky",
+        tab: "bonus",
+        icon: "★",
+        name: "Удачный бем",
+        desc: "+5% шанс критического клика.",
+        baseCost: 300,
+        scale: 1.75,
+        max: 12,
+        buy(state) {
+            state.critChance += 0.05;
+        }
+    },
+    {
+        id: "critPower",
+        tab: "bonus",
+        icon: "×",
+        name: "Критический разгон",
+        desc: "+0.5 к множителю критического клика.",
+        baseCost: 700,
+        scale: 1.9,
+        max: 8,
+        buy(state) {
+            state.critMultiplier += 0.5;
+        }
+    },
+    {
+        id: "combo",
+        tab: "bonus",
+        icon: "↗",
+        name: "Комбо-движок",
+        desc: "Комбо держится дольше и дает больше очков.",
+        baseCost: 360,
+        scale: 1.7,
+        max: 10,
+        buy(state) {
+            state.comboPower += 0.01;
+            state.comboWindow += 160;
+        }
+    },
+    {
+        id: "videoBoost",
+        tab: "bonus",
+        icon: "▸",
+        name: "18+",
+        desc: "Открывает видео и навсегда дает +20% к авто-доходу.",
+        baseCost: 1200,
+        scale: 1,
+        max: 1,
+        buy(state) {
+            state.autoMultiplier += 0.2;
+            openVideo();
+        }
+    },
+    {
+        id: "skinGold",
+        tab: "style",
+        icon: "◆",
+        name: "Золотая шляпа",
+        desc: "Новый вид кнопки. Покупается один раз.",
+        baseCost: 250,
+        scale: 1,
+        max: 1,
+        buy(state) {
+            state.skin = "gold";
+        }
+    },
+    {
+        id: "skinNeon",
+        tab: "style",
+        icon: "✦",
+        name: "Блек кнопка",
+        desc: "Яркий стиль и +5% к кликам.",
+        baseCost: 650,
+        scale: 1,
+        max: 1,
+        buy(state) {
+            state.skin = "neon";
+            state.clickMultiplier += 0.05;
+        }
+    },
+    {
+        id: "skinGlass",
+        tab: "style",
+        icon: "◇",
+        name: "Стеклянная кнопка",
+        desc: "Премиум-стиль и +10% к авто-доходу.",
+        baseCost: 950,
+        scale: 1,
+        max: 1,
+        buy(state) {
+            state.skin = "glass";
+            state.autoMultiplier += 0.1;
+        }
+    }
+];
+
+const defaultState = {
+    score: 0,
+    totalClicks: 0,
+    baseClick: 1,
+    clickMultiplier: 1,
+    autoRate: 0,
+    autoMultiplier: 1,
+    critChance: 0,
+    critMultiplier: 2,
+    combo: 0,
+    comboPower: 0.01,
+    comboWindow: 1300,
+    lastClickAt: 0,
+    lastSavedAt: Date.now(),
+    soundOn: true,
+    musicOn: false,
+    skin: "default",
+    levels: {}
+};
+
+const cloneDefaultState = () => JSON.parse(JSON.stringify(defaultState));
+let state = loadState();
+let activeTab = "click";
+let saveTimer;
+
+const $ = (selector) => document.querySelector(selector);
+const scoreEl = $("#score");
+const clickPowerEl = $("#clickPower");
+const perSecondEl = $("#perSecond");
+const critChanceEl = $("#critChance");
+const totalClicksEl = $("#totalClicks");
+const comboEl = $("#combo");
+const clickBtn = $("#clickBtn");
+const clickZone = $("#clickZone");
+const shopList = $("#shopList");
+const soundBtn = $("#soundBtn");
+const musicBtn = $("#musicBtn");
+const bgMusic = $("#bgMusic");
+const clickSound = $("#clickSound");
+const buySound = $("#buySound");
+const toast = $("#toast");
+const videoOverlay = $("#videoOverlay");
+const partyVideo = $("#partyVideo");
+
+function loadState() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+            return cloneDefaultState();
+        }
+
+        const parsed = JSON.parse(raw);
+        const merged = { ...structuredClone(defaultState), ...parsed };
+        merged.levels = { ...defaultState.levels, ...parsed.levels };
+        const offlineSeconds = Math.max(0, Math.min(7200, (Date.now() - (merged.lastSavedAt || Date.now())) / 1000));
+        const offlineGain = Math.floor(getAutoPerSecond(merged) * offlineSeconds * 0.35);
+
+        if (offlineGain > 0) {
+            merged.score += offlineGain;
+            queueMicrotask(() => showToast(`Пока тебя не было: +${format(offlineGain)}`));
+        }
+
+        return merged;
+    } catch {
+        return cloneDefaultState();
+    }
+}
+
+function saveState(show = false) {
+    state.lastSavedAt = Date.now();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (show) {
+        showToast("Прогресс сохранен");
+    }
+}
+
+function format(value) {
+    return formatter.format(Math.floor(value));
+}
+
+function getLevel(id) {
+    return state.levels[id] || 0;
+}
+
+function getCost(upgrade) {
+    const level = getLevel(upgrade.id);
+    return Math.floor(upgrade.baseCost * Math.pow(upgrade.scale, level));
+}
+
+function getClickValue() {
+    const comboMultiplier = 1 + Math.min(1.25, state.combo * state.comboPower);
+    return Math.max(1, Math.floor(state.baseClick * state.clickMultiplier * comboMultiplier));
+}
+
+function getAutoPerSecond(source = state) {
+    return Math.floor(source.autoRate * source.autoMultiplier);
+}
+
+function addScore(amount) {
+    state.score += amount;
+    render();
+}
+
+function handleClick(event) {
+    const now = Date.now();
+    state.combo = now - state.lastClickAt <= state.comboWindow ? state.combo + 1 : 1;
+    state.lastClickAt = now;
+    state.totalClicks += 1;
+
+    let amount = getClickValue();
+    const isCrit = Math.random() < state.critChance;
+    if (isCrit) {
+        amount = Math.floor(amount * state.critMultiplier);
+    }
+
+    addScore(amount);
+    playSound(clickSound, isCrit ? 1.18 : 1);
+    spawnFloat(event.clientX, event.clientY, `+${format(amount)}`, isCrit);
+}
+
+function buyUpgrade(id) {
+    const upgrade = upgrades.find((item) => item.id === id);
+    if (!upgrade) return;
+
+    const level = getLevel(upgrade.id);
+    if (level >= upgrade.max) {
+        showToast("Это улучшение уже на максимуме");
+        return;
+    }
+
+    const cost = getCost(upgrade);
+    if (state.score < cost) {
+        showToast(`Не хватает ${format(cost - state.score)} очков`);
+        return;
+    }
+
+    state.score -= cost;
+    state.levels[upgrade.id] = level + 1;
+    upgrade.buy(state);
+    playSound(buySound, 0.82);
+    showToast(`${upgrade.name}: уровень ${state.levels[upgrade.id]}`);
+    saveState();
+    render();
+}
+
+function playSound(audio, rate = 1) {
+    if (!state.soundOn || !audio) return;
+    audio.pause();
+    audio.currentTime = 0;
+    audio.playbackRate = rate;
+    audio.play().catch(() => {});
+}
+
+function toggleMusic() {
+    state.musicOn = !state.musicOn;
+    if (state.musicOn) {
+        bgMusic.volume = 0.38;
+        bgMusic.play().catch(() => {
+            state.musicOn = false;
+            showToast("Браузер разрешит музыку после клика по странице");
+            render();
+        });
+    } else {
+        bgMusic.pause();
+    }
+    saveState();
+    render();
+}
+
+function toggleSound() {
+    state.soundOn = !state.soundOn;
+    saveState();
+    render();
+}
+
+function spawnFloat(x, y, text, crit = false) {
+    const el = document.createElement("div");
+    el.className = `float${crit ? " crit" : ""}`;
+    el.textContent = crit ? `${text} КРИТ` : text;
+    el.style.left = `${x - 18}px`;
+    el.style.top = `${y - 18}px`;
+    document.body.appendChild(el);
+    el.addEventListener("animationend", () => el.remove(), { once: true });
+}
+
+function showToast(message) {
+    clearTimeout(showToast.timer);
+    toast.textContent = message;
+    toast.classList.add("show");
+    showToast.timer = setTimeout(() => toast.classList.remove("show"), 1700);
+}
+
+function openVideo() {
+    videoOverlay.classList.add("open");
+    videoOverlay.setAttribute("aria-hidden", "false");
+    partyVideo.currentTime = 0;
+    partyVideo.play().catch(() => {});
+}
+
+function closeVideo() {
+    partyVideo.pause();
+    videoOverlay.classList.remove("open");
+    videoOverlay.setAttribute("aria-hidden", "true");
+}
+
+function resetGame() {
+    if (!confirm("Сбросить весь прогресс?")) return;
+    state = cloneDefaultState();
+    bgMusic.pause();
+    localStorage.removeItem(STORAGE_KEY);
+    showToast("Прогресс сброшен");
+    render();
+}
+
+function renderShop() {
+    shopList.innerHTML = "";
+
+    upgrades
+        .filter((upgrade) => upgrade.tab === activeTab)
+        .forEach((upgrade) => {
+            const level = getLevel(upgrade.id);
+            const maxed = level >= upgrade.max;
+            const cost = getCost(upgrade);
+            const canBuy = state.score >= cost && !maxed;
+            const item = document.createElement("article");
+            item.className = "upgrade";
+            item.innerHTML = `
+                <div class="upgrade-icon">${upgrade.icon}</div>
+                <div>
+                    <h3>${upgrade.name}</h3>
+                    <p>${upgrade.desc}</p>
+                    <div class="upgrade-meta">
+                        <span>Ур. ${level}/${upgrade.max}</span>
+                        <span>${maxed ? "Куплено" : `${format(cost)} очков`}</span>
+                    </div>
+                    <button class="buy-btn" type="button" ${canBuy ? "" : "disabled"}>${maxed ? "Максимум" : "Купить"}</button>
+                </div>
+            `;
+            item.querySelector(".buy-btn").addEventListener("click", () => buyUpgrade(upgrade.id));
+            shopList.appendChild(item);
+        });
+}
+
+function render() {
+    scoreEl.textContent = format(state.score);
+    clickPowerEl.textContent = format(getClickValue());
+    perSecondEl.textContent = format(getAutoPerSecond());
+    critChanceEl.textContent = `${Math.round(state.critChance * 100)}%`;
+    totalClicksEl.textContent = format(state.totalClicks);
+    comboEl.innerHTML = `Комбо: <strong>x${(1 + Math.min(1.25, state.combo * state.comboPower)).toFixed(2)}</strong>`;
+
+    scoreEl.classList.remove("pop");
+    void scoreEl.offsetWidth;
+    scoreEl.classList.add("pop");
+
+    clickBtn.className = "click-btn";
+    if (state.skin !== "default") {
+        clickBtn.classList.add(`skin-${state.skin}`);
+    }
+
+    soundBtn.classList.toggle("active", state.soundOn);
+    musicBtn.classList.toggle("active", state.musicOn);
+    musicBtn.textContent = state.musicOn ? "♫" : "♪";
+    soundBtn.textContent = state.soundOn ? "🔊" : "🔇";
+    renderShop();
+}
+
+function tick() {
+    const now = Date.now();
+    if (state.combo > 0 && now - state.lastClickAt > state.comboWindow) {
+        state.combo = 0;
+        render();
+    }
+
+    const gain = getAutoPerSecond() * (TICK_MS / 1000);
+    if (gain > 0) {
+        state.score += gain;
+        render();
+    }
+}
+
+clickBtn.addEventListener("click", handleClick);
+clickZone.addEventListener("pointermove", (event) => {
+    clickZone.style.setProperty("--x", `${event.clientX}px`);
+    clickZone.style.setProperty("--y", `${event.clientY}px`);
+});
+
+soundBtn.addEventListener("click", toggleSound);
+musicBtn.addEventListener("click", toggleMusic);
+$("#saveBtn").addEventListener("click", () => saveState(true));
+$("#resetBtn").addEventListener("click", resetGame);
+$("#closeVideoBtn").addEventListener("click", closeVideo);
+partyVideo.addEventListener("ended", closeVideo);
+$("#mobileShopBtn").addEventListener("click", () => document.getElementById("shop").scrollIntoView({ behavior: "smooth" }));
+
+document.querySelectorAll(".tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+        activeTab = tab.dataset.tab;
+        document.querySelectorAll(".tab").forEach((node) => node.classList.toggle("active", node === tab));
+        renderShop();
+    });
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.code === "Space") {
+        event.preventDefault();
+        const rect = clickBtn.getBoundingClientRect();
+        handleClick({ clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 });
+    }
+
+    if (event.code === "Escape" && videoOverlay.classList.contains("open")) {
+        closeVideo();
+    }
+});
+
+setInterval(tick, TICK_MS);
+saveTimer = setInterval(() => saveState(), 6000);
+window.addEventListener("beforeunload", () => {
+    clearInterval(saveTimer);
+    saveState();
+});
+
+render();
+</script>
+</body>
+</html>
